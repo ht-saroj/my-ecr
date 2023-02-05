@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Initial Deployment Preview Comment
-        uses: peter-evans/create-or-update-comment@v2.1.1
+        uses: peter-evans/create-or-update-comment@v1.4.5
         id: pr-preview-comment
         with:
           # issue-number: ${{ github.event.pull_request.number }}
