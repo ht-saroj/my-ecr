@@ -21,6 +21,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       
+      - name: Initial Deployment Preview Comment
+        uses: peter-evans/create-or-update-comment@v2.1.1
+        id: pr-preview-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Building Deployment Preview..
+            A preview of this Pull Request is being created. Hold tight while it's building ⚒️
+            This comment will be automatically updated when the preview is ready.
+      
       - name: Set Outputs
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -48,4 +58,15 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Update PR Preview Comment
+        uses: peter-evans/create-or-update-comment@v1.4.5
+        with:
+          comment-id: ${{ steps.pr-preview-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            ### Deployment Preview
+            😎 Preview this PR: https://cicd-demo-app-preview-pr-${{ github.event.pull_request.number }}.azurewebsites.net
+            🧑🏼‍💻 Commit SHA: ${{ github.sha }}
+          reactions: "rocket"
 
