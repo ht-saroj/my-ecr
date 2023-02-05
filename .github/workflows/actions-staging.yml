@@ -1,0 +1,51 @@
+name: Build and Push RC Image to ECR
+on:
+  push: 
+    branches:
+      - main
+jobs:
+  #the arbitary name we have given to the jobs, that is build-and-push
+  build-and-push:
+    name: Build and Push to ECR
+    runs-on: ubuntu-latest
+    #granting write permission to the current job for the following scopre 
+    permissions:
+      id-token: write
+      statuses: write
+      contents: write
+    #Setting default run step options for a job, providing default shell option
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Set Outputs
+        id: vars
+        run: echo "sha_short=${git rev-parse --short HEAD}" >> $GITHUB_OUTPUT
+
+      - name: Check Outputs
+        run: echo ${{ steps.vars.outputs.sha_short }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secret.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+
+      - name: Login to Amazon ECR Private
+        id: login-ecr
+        uses: aws-actions@amazon-ecr-login@v1
+      
+      - name: Build, Tag and Push docker image to Amazon ECR
+        id: build-image
+        env: 
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}s
+          ECR_REPOSITORY: features-client
+          IMAGE_TAG: ${{ steps.vars.outputs.sha_short }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
